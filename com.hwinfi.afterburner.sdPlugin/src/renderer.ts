@@ -100,13 +100,13 @@ export function renderChart(history: number[], unit: string, s: ActionSettings):
   const line = coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
 
   // Filled area from the line down to the plot bottom, painted with a vertical
-  // gradient that is strongest right under the line and fades out downward.
+  // gradient that is full color at the top of the plot and fades out downward.
   const first = coords[0];
   const last = coords[coords.length - 1];
   const area = `${line} ${last[0].toFixed(1)},${plotBottom} ${first[0].toFixed(1)},${plotBottom}`;
   const gradient =
     `<defs><linearGradient id="fill" x1="0" y1="${plotTop}" x2="0" y2="${plotBottom}" gradientUnits="userSpaceOnUse">` +
-    `<stop offset="0" stop-color="${s.chartColor}" stop-opacity="0.6"/>` +
+    `<stop offset="0" stop-color="${s.chartColor}" stop-opacity="1"/>` +
     `<stop offset="1" stop-color="${s.chartColor}" stop-opacity="0"/>` +
     `</linearGradient></defs>`;
 
