@@ -10,5 +10,5 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true
   },
-  "include": ["com.hwinfi.afterburner.sdPlugin/src/**/*.ts"]
+  "include": ["com.streamdeck.afterburner.sdPlugin/src/**/*.ts"]
 }

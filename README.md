@@ -1,4 +1,4 @@
-# MSI Afterburner Sensors — plugin Stream Deck
+# Afterburner Sensors — plugin Stream Deck
 
 Plugin Elgato Stream Deck, który wyświetla dowolny czujnik monitorowany przez **MSI Afterburner** (temperatura, obciążenie, zegar, obroty wentylatora, zużycie pamięci itd.) na klawiszu — jako tekst albo mini-wykres.
 
@@ -42,7 +42,7 @@ cd Streamdeck_afterburner
 npm install
 
 # 2) zależność runtime (koffi) obok wtyczki — wymagane, bo koffi jest natywne
-cd com.hwinfi.afterburner.sdPlugin && npm install && cd ..
+cd com.streamdeck.afterburner.sdPlugin && npm install && cd ..
 
 # 3) zbuduj plugin (src/plugin.ts -> bin/plugin.js)
 npm run build
@@ -51,7 +51,7 @@ npm run build
 npm run link
 ```
 
-Po `npm run link` w Stream Decku, na liście akcji po prawej, pojawi się kategoria **„MSI Afterburner Sensors"** z akcją **„Sensor"**. Przeciągnij ją na wolny klawisz.
+Po `npm run link` w Stream Decku, na liście akcji po prawej, pojawi się kategoria **„Afterburner Sensors"** z akcją **„Sensor"**. Przeciągnij ją na wolny klawisz.
 
 ---
 
@@ -125,7 +125,7 @@ Więcej szczegółów architektonicznych i pułapek SDK: **[CLAUDE.md](CLAUDE.md
 
 ```
 Streamdeck_afterburner/
-├─ com.hwinfi.afterburner.sdPlugin/   # właściwa wtyczka
+├─ com.streamdeck.afterburner.sdPlugin/   # właściwa wtyczka
 │  ├─ manifest.json
 │  ├─ bin/launcher.bat                # (bin/plugin.js budowany lokalnie)
 │  ├─ imgs/                           # ikony PNG (@1x/@2x)
@@ -141,7 +141,7 @@ Streamdeck_afterburner/
 
 ## Rozwiązywanie problemów
 
-- **Wtyczka nie pojawia się w Stream Decku** → uruchom `npm run validate`. Stream Deck po cichu odrzuca wtyczkę z błędnym manifestem. Potem `npm run restart` i sprawdź logi w `com.hwinfi.afterburner.sdPlugin/logs/`.
+- **Wtyczka nie pojawia się w Stream Decku** → uruchom `npm run validate`. Stream Deck po cichu odrzuca wtyczkę z błędnym manifestem. Potem `npm run restart` i sprawdź logi w `com.streamdeck.afterburner.sdPlugin/logs/`.
 - **Klawisz pokazuje `N/A`** → MSI Afterburner nie działa lub ma wyłączony monitoring; ewentualnie wybrany czujnik zniknął z listy.
 - **Lista czujników pusta w konfiguracji** → jak wyżej — uruchom Afterburner przed otwarciem panelu.
 

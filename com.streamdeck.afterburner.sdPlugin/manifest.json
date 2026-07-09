@@ -1,28 +1,43 @@
 {
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
-  "UUID": "com.hwinfi.afterburner",
-  "Name": "MSI Afterburner Sensors",
+  "UUID": "com.streamdeck.afterburner",
+  "Name": "Afterburner Sensors",
   "Version": "0.1.0.0",
   "Author": "hwinfi",
   "Description": "Show any MSI Afterburner sensor (temperature, load, clock, ...) on a key as text or a mini chart.",
-  "Category": "MSI Afterburner Sensors",
+  "Category": "Afterburner Sensors",
   "CategoryIcon": "imgs/category-icon",
   "Icon": "imgs/plugin-icon",
   "SDKVersion": 2,
-  "Software": { "MinimumVersion": "6.5" },
-  "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
-  "Nodejs": { "Version": "20", "Debug": "enabled" },
+  "Software": {
+    "MinimumVersion": "6.5"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "20",
+    "Debug": "enabled"
+  },
   "CodePath": "bin/plugin.js",
   "Actions": [
     {
       "Name": "Sensor",
-      "UUID": "com.hwinfi.afterburner.sensor",
+      "UUID": "com.streamdeck.afterburner.sensor",
       "Icon": "imgs/action-icon",
       "Tooltip": "Display an MSI Afterburner sensor value or chart",
       "PropertyInspectorPath": "ui/pi.html",
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "States": [{ "Image": "imgs/key-icon", "ShowTitle": false }]
+      "States": [
+        {
+          "Image": "imgs/key-icon",
+          "ShowTitle": false
+        }
+      ]
     }
   ]
 }

@@ -1,7 +1,8 @@
 node_modules/
-com.hwinfi.afterburner.sdPlugin/node_modules/
-com.hwinfi.afterburner.sdPlugin/bin/plugin.js
-com.hwinfi.afterburner.sdPlugin/logs/
+com.streamdeck.afterburner.sdPlugin/node_modules/
+com.streamdeck.afterburner.sdPlugin/bin/plugin.js
+com.streamdeck.afterburner.sdPlugin/logs/
 *.log
 
 .claude/settings.local.json
+dist/

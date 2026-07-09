@@ -28,7 +28,7 @@ interface GetSensorsMessage {
   event: "getSensors";
 }
 
-@action({ UUID: "com.hwinfi.afterburner.sensor" })
+@action({ UUID: "com.streamdeck.afterburner.sensor" })
 export class SensorAction extends SingletonAction<ActionSettings> {
   readonly #keys = new Map<string, KeyState>();
 
@@ -129,7 +129,7 @@ export class SensorAction extends SingletonAction<ActionSettings> {
         await action.setImage(toImage(renderText(formatValue(entry.value), entry.unit, settings)));
       }
     } catch (err) {
-      console.error("hwinfi tick error:", err);
+      console.error("afterburner tick error:", err);
       await action.setImage(toImage(renderMessage("ERR", settings)));
     }
   }

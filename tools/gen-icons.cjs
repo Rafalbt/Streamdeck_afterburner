@@ -6,7 +6,7 @@ const { createCanvas } = require("@napi-rs/canvas");
 const fs = require("fs");
 const path = require("path");
 
-const OUT = path.resolve(__dirname, "../com.hwinfi.afterburner.sdPlugin/imgs");
+const OUT = path.resolve(__dirname, "../com.streamdeck.afterburner.sdPlugin/imgs");
 
 const BG = "#101418";
 const LINE = "#1d9e75";
