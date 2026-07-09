@@ -1,0 +1,7 @@
+node_modules/
+com.hwinfi.afterburner.sdPlugin/node_modules/
+com.hwinfi.afterburner.sdPlugin/bin/plugin.js
+com.hwinfi.afterburner.sdPlugin/logs/
+*.log
+
+.claude/settings.local.json

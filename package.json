@@ -1,0 +1,31 @@
+{
+  "name": "hwinfi-streamdeck",
+  "version": "0.1.0",
+  "description": "Stream Deck plugin displaying MSI Afterburner hardware sensors",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild com.hwinfi.afterburner.sdPlugin/src/plugin.ts --bundle --platform=node --target=node20 --outfile=com.hwinfi.afterburner.sdPlugin/bin/plugin.js --format=cjs --external:koffi",
+    "watch": "npm run build -- --watch",
+    "typecheck": "tsc --noEmit",
+    "icons": "node tools/gen-icons.cjs",
+    "validate": "streamdeck validate com.hwinfi.afterburner.sdPlugin",
+    "dev": "streamdeck dev",
+    "link": "streamdeck link com.hwinfi.afterburner.sdPlugin",
+    "restart": "streamdeck restart com.hwinfi.afterburner"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^2.1.0",
+    "@elgato/utils": "^0.4.5"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.7.4",
+    "@napi-rs/canvas": "^1.0.2",
+    "@types/node": "^20.19.43",
+    "esbuild": "^0.28.0",
+    "koffi": "^2.9.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
