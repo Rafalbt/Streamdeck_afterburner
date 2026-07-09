@@ -17,7 +17,7 @@ Każdy klawisz może niezależnie monitorować inny parametr. Plugin działa jak
 - 🏷️ **Własny label** — mniejszy tekst pod wartością (np. „GPU", „CPU")
 - ↕️ **Pozycja wartości** — góra / środek / dół (label podąża pod wartością)
 - 🎨 **Konfigurowalne kolory** tekstu i wykresu oraz rozmiar tekstu
-- 🌈 **Tło: jednolite lub gradient** — dwa kolory (góra/dół) z pionowym gradientem
+- 🌈 **Wypełnienie pod wykresem** — gradient najmocniejszy tuż przy linii, zanikający w dół (kolorem wykresu)
 - 🔢 **Wiele klawiszy naraz** — ta sama akcja na kilku klawiszach, każdy z innym czujnikiem
 - 🛡️ **Odporność na braki** — gdy Afterburner nie działa lub czujnik zniknął, klawisz pokazuje `N/A` zamiast się wywalać
 
@@ -70,8 +70,6 @@ Po `npm run link` w Stream Decku, na liście akcji po prawej, pojawi się katego
 | **Text color** | Kolor tekstu wartości/labela |
 | **Chart color** | Kolor linii wykresu |
 | **Text size** | Rozmiar tekstu wartości (10–40) |
-| **Background → Gradient** | Włącza pionowy gradient tła (domyślnie wył. = tło jednolite) |
-| **Background → Colors** | Kolor górny i dolny tła (dolny używany tylko przy gradiencie) |
 | **Chart range → Auto scale** | Auto-skalowanie osi Y do danych (domyślnie wł.) |
 | **Chart range → Min / Max** | Własne granice osi Y wpisane przez użytkownika (aktywne, gdy „Auto scale" wyłączone) |
 

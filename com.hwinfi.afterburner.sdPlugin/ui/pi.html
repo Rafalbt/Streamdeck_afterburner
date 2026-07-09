@@ -76,20 +76,6 @@
     </div>
 
     <div class="row">
-      <label for="bgGradient">Background</label>
-      <div class="control">
-        <label><input type="checkbox" id="bgGradient" /> Gradient</label>
-      </div>
-    </div>
-    <div class="row">
-      <label>Colors (top / bottom)</label>
-      <div class="control">
-        <input type="color" id="bgColor" />
-        <input type="color" id="bgColor2" />
-      </div>
-    </div>
-
-    <div class="row">
       <label for="chartAuto">Chart range</label>
       <div class="control">
         <label><input type="checkbox" id="chartAuto" /> Auto scale</label>
@@ -118,9 +104,6 @@
         bgColor: "#000000",
         label: "",
         valuePosition: "center",
-        bgColor: "#000000",
-        bgColor2: "#c81e8c",
-        bgGradient: false,
         chartAuto: true,
         chartMin: 0,
         chartMax: 100,
@@ -134,9 +117,6 @@
       const $paramHint = document.getElementById("paramHint");
       const $label = document.getElementById("label");
       const $valuePosition = document.getElementById("valuePosition");
-      const $bgColor = document.getElementById("bgColor");
-      const $bgColor2 = document.getElementById("bgColor2");
-      const $bgGradient = document.getElementById("bgGradient");
       const $chartAuto = document.getElementById("chartAuto");
       const $chartMin = document.getElementById("chartMin");
       const $chartMax = document.getElementById("chartMax");
@@ -181,10 +161,6 @@
         $sizeValue.textContent = settings.textSize + "px";
         $label.value = settings.label;
         $valuePosition.value = settings.valuePosition;
-        $bgColor.value = settings.bgColor;
-        $bgColor2.value = settings.bgColor2;
-        $bgGradient.checked = settings.bgGradient;
-        updateGradientEnabled();
         $chartAuto.checked = settings.chartAuto;
         $chartMin.value = settings.chartMin;
         $chartMax.value = settings.chartMax;
@@ -196,12 +172,6 @@
         $chartMin.disabled = disabled;
         $chartMax.disabled = disabled;
         $rangeRow.style.opacity = disabled ? "0.45" : "1";
-      }
-
-      function updateGradientEnabled() {
-        // The second (bottom) color only matters when the gradient is on.
-        $bgColor2.disabled = !$bgGradient.checked;
-        $bgColor2.style.opacity = $bgGradient.checked ? "1" : "0.35";
       }
 
       function setMode(mode) {
@@ -263,19 +233,6 @@
       });
       $valuePosition.addEventListener("change", function () {
         settings.valuePosition = $valuePosition.value;
-        saveSettings();
-      });
-      $bgColor.addEventListener("input", function () {
-        settings.bgColor = $bgColor.value;
-        saveSettings();
-      });
-      $bgColor2.addEventListener("input", function () {
-        settings.bgColor2 = $bgColor2.value;
-        saveSettings();
-      });
-      $bgGradient.addEventListener("change", function () {
-        settings.bgGradient = $bgGradient.checked;
-        updateGradientEnabled();
         saveSettings();
       });
       $chartAuto.addEventListener("change", function () {

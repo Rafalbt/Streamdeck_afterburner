@@ -27,24 +27,8 @@ export function formatValue(v: number): string {
   return (Math.round(v * 10) / 10).toString();
 }
 
-type BgSettings = Pick<ActionSettings, "bgColor" | "bgColor2" | "bgGradient">;
-
-/** Background layer: a solid fill, or a vertical gradient bgColor -> bgColor2. */
-function background(s: BgSettings): string {
-  if (!s.bgGradient) {
-    return `<rect width="${W}" height="${H}" fill="${s.bgColor}"/>`;
-  }
-  return (
-    `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">` +
-    `<stop offset="0" stop-color="${s.bgColor}"/>` +
-    `<stop offset="1" stop-color="${s.bgColor2}"/>` +
-    `</linearGradient></defs>` +
-    `<rect width="${W}" height="${H}" fill="url(#bg)"/>`
-  );
-}
-
 function frame(inner: string, bg: string): string {
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${bg}${inner}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${bg}"/>${inner}</svg>`;
 }
 
 /** Vertical anchor (dominant-baseline central) for a value position, in 72-space. */
@@ -70,7 +54,7 @@ export function renderText(value: string, unit: string, s: ActionSettings): stri
     `<text x="36" y="${vy}" text-anchor="middle" dominant-baseline="central" ` +
     `fill="${s.textColor}" font-family="sans-serif" font-weight="bold" font-size="${s.textSize}">${esc(value)}${unitTspan}</text>`;
   const inner = valueSvg + labelUnder(s.label, vy, s.textSize, s.textColor);
-  return frame(inner, background(s));
+  return frame(inner, s.bgColor);
 }
 
 /**
@@ -105,30 +89,43 @@ export function renderChart(history: number[], unit: string, s: ActionSettings):
   }
   const range = max - min || 1;
   const span = history.length - 1;
+  const plotBottom = plotTop + plotH;
 
-  const pts = history
-    .map((v, i) => {
-      const clamped = Math.min(max, Math.max(min, v)); // keep out-of-range values in view
-      const x = pad + (i / span) * (W - 2 * pad);
-      const y = plotTop + (1 - (clamped - min) / range) * plotH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const coords = history.map((v, i) => {
+    const clamped = Math.min(max, Math.max(min, v)); // keep out-of-range values in view
+    const x = pad + (i / span) * (W - 2 * pad);
+    const y = plotTop + (1 - (clamped - min) / range) * plotH;
+    return [x, y] as const;
+  });
+  const line = coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+
+  // Filled area from the line down to the plot bottom, painted with a vertical
+  // gradient that is strongest right under the line and fades out downward.
+  const first = coords[0];
+  const last = coords[coords.length - 1];
+  const area = `${line} ${last[0].toFixed(1)},${plotBottom} ${first[0].toFixed(1)},${plotBottom}`;
+  const gradient =
+    `<defs><linearGradient id="fill" x1="0" y1="${plotTop}" x2="0" y2="${plotBottom}" gradientUnits="userSpaceOnUse">` +
+    `<stop offset="0" stop-color="${s.chartColor}" stop-opacity="0.6"/>` +
+    `<stop offset="1" stop-color="${s.chartColor}" stop-opacity="0"/>` +
+    `</linearGradient></defs>`;
 
   const current = formatValue(history[history.length - 1]);
   const valueLabel = unit ? `${current}${unit}` : current;
   const vy = valueY(s.valuePosition);
   const inner =
-    `<polyline points="${pts}" fill="none" stroke="${s.chartColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
+    gradient +
+    `<polygon points="${area}" fill="url(#fill)" stroke="none"/>` +
+    `<polyline points="${line}" fill="none" stroke="${s.chartColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
     `<text x="36" y="${vy}" text-anchor="middle" dominant-baseline="central" fill="${s.textColor}" font-family="sans-serif" font-weight="bold" font-size="14">${esc(valueLabel)}</text>` +
     labelUnder(s.label, vy, 14, s.textColor);
-  return frame(inner, background(s));
+  return frame(inner, s.bgColor);
 }
 
 /** Centered status message (e.g. "N/A") used for error / unavailable states. */
 export function renderMessage(msg: string, s: ActionSettings): string {
   const inner = `<text x="36" y="36" text-anchor="middle" dominant-baseline="central" fill="#ff5555" font-family="sans-serif" font-weight="bold" font-size="18">${esc(msg)}</text>`;
-  return frame(inner, background(s));
+  return frame(inner, s.bgColor);
 }
 
 /** Wrap an SVG string as a data URI accepted by action.setImage. */
