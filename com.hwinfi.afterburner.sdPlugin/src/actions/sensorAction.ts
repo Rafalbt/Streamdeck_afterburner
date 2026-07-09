@@ -111,13 +111,13 @@ export class SensorAction extends SingletonAction<ActionSettings> {
     try {
       const entries = readMahm();
       if (!entries) {
-        await action.setImage(toImage(renderMessage("N/A", settings.bgColor)));
+        await action.setImage(toImage(renderMessage("N/A", settings)));
         return;
       }
 
       const entry = findEntry(entries, settings.parameterName);
       if (!entry) {
-        await action.setImage(toImage(renderMessage("N/A", settings.bgColor)));
+        await action.setImage(toImage(renderMessage("N/A", settings)));
         return;
       }
 
@@ -130,7 +130,7 @@ export class SensorAction extends SingletonAction<ActionSettings> {
       }
     } catch (err) {
       console.error("hwinfi tick error:", err);
-      await action.setImage(toImage(renderMessage("ERR", settings.bgColor)));
+      await action.setImage(toImage(renderMessage("ERR", settings)));
     }
   }
 }

@@ -27,8 +27,24 @@ export function formatValue(v: number): string {
   return (Math.round(v * 10) / 10).toString();
 }
 
+type BgSettings = Pick<ActionSettings, "bgColor" | "bgColor2" | "bgGradient">;
+
+/** Background layer: a solid fill, or a vertical gradient bgColor -> bgColor2. */
+function background(s: BgSettings): string {
+  if (!s.bgGradient) {
+    return `<rect width="${W}" height="${H}" fill="${s.bgColor}"/>`;
+  }
+  return (
+    `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${s.bgColor}"/>` +
+    `<stop offset="1" stop-color="${s.bgColor2}"/>` +
+    `</linearGradient></defs>` +
+    `<rect width="${W}" height="${H}" fill="url(#bg)"/>`
+  );
+}
+
 function frame(inner: string, bg: string): string {
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${bg}"/>${inner}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${bg}${inner}</svg>`;
 }
 
 /** Vertical anchor (dominant-baseline central) for a value position, in 72-space. */
@@ -54,7 +70,7 @@ export function renderText(value: string, unit: string, s: ActionSettings): stri
     `<text x="36" y="${vy}" text-anchor="middle" dominant-baseline="central" ` +
     `fill="${s.textColor}" font-family="sans-serif" font-weight="bold" font-size="${s.textSize}">${esc(value)}${unitTspan}</text>`;
   const inner = valueSvg + labelUnder(s.label, vy, s.textSize, s.textColor);
-  return frame(inner, s.bgColor);
+  return frame(inner, background(s));
 }
 
 /**
@@ -106,13 +122,13 @@ export function renderChart(history: number[], unit: string, s: ActionSettings):
     `<polyline points="${pts}" fill="none" stroke="${s.chartColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
     `<text x="36" y="${vy}" text-anchor="middle" dominant-baseline="central" fill="${s.textColor}" font-family="sans-serif" font-weight="bold" font-size="14">${esc(valueLabel)}</text>` +
     labelUnder(s.label, vy, 14, s.textColor);
-  return frame(inner, s.bgColor);
+  return frame(inner, background(s));
 }
 
 /** Centered status message (e.g. "N/A") used for error / unavailable states. */
-export function renderMessage(msg: string, bg = "#000000"): string {
+export function renderMessage(msg: string, s: ActionSettings): string {
   const inner = `<text x="36" y="36" text-anchor="middle" dominant-baseline="central" fill="#ff5555" font-family="sans-serif" font-weight="bold" font-size="18">${esc(msg)}</text>`;
-  return frame(inner, bg);
+  return frame(inner, background(s));
 }
 
 /** Wrap an SVG string as a data URI accepted by action.setImage. */

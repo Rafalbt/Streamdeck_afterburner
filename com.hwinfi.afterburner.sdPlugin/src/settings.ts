@@ -11,8 +11,12 @@ export interface ActionSettings extends JsonObject {
   chartColor: string;
   /** Text size in the 72x72 SVG coordinate space. */
   textSize: number;
-  /** Key background color. */
+  /** Key background color (top color / solid fill). */
   bgColor: string;
+  /** Second background color (bottom) used when `bgGradient` is true. */
+  bgColor2: string;
+  /** When true, fill the background with a vertical gradient bgColor -> bgColor2. */
+  bgGradient: boolean;
   /** Optional custom label text drawn in smaller text under the value (empty = hidden). */
   label: string;
   /** Vertical position of the value (the label follows directly underneath). */
@@ -32,6 +36,8 @@ export const DEFAULTS: ActionSettings = {
   chartColor: "#1d9e75",
   textSize: 24,
   bgColor: "#000000",
+  bgColor2: "#c81e8c",
+  bgGradient: false,
   label: "",
   valuePosition: "center",
   chartAuto: true,
