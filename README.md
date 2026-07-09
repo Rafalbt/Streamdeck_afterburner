@@ -13,10 +13,11 @@ Każdy klawisz może niezależnie monitorować inny parametr. Plugin działa jak
 - 🌡️ **Dowolny czujnik** — lista sensorów pobierana jest na żywo z Afterburnera (zależy od karty i wersji), nic nie jest zahardkodowane
 - 📝 **Tryb tekstowy** — bieżąca wartość + jednostka
 - 📈 **Tryb wykresu** — mini-wykres liniowy z historii ostatnich ~50 odczytów
-- 🎯 **Stały lub automatyczny zakres wykresu** — np. oś Y na sztywno 30–85, albo auto-skalowanie do danych
+- 🎯 **Zakres osi Y wykresu** — auto-skalowanie do danych, albo własne granice min/max wpisane przez użytkownika (np. 30–85)
 - 🏷️ **Własny label** — mniejszy tekst pod wartością (np. „GPU", „CPU")
 - ↕️ **Pozycja wartości** — góra / środek / dół (label podąża pod wartością)
 - 🎨 **Konfigurowalne kolory** tekstu i wykresu oraz rozmiar tekstu
+- 🌈 **Tło: jednolite lub gradient** — dwa kolory (góra/dół) z pionowym gradientem
 - 🔢 **Wiele klawiszy naraz** — ta sama akcja na kilku klawiszach, każdy z innym czujnikiem
 - 🛡️ **Odporność na braki** — gdy Afterburner nie działa lub czujnik zniknął, klawisz pokazuje `N/A` zamiast się wywalać
 
@@ -69,8 +70,10 @@ Po `npm run link` w Stream Decku, na liście akcji po prawej, pojawi się katego
 | **Text color** | Kolor tekstu wartości/labela |
 | **Chart color** | Kolor linii wykresu |
 | **Text size** | Rozmiar tekstu wartości (10–40) |
+| **Background → Gradient** | Włącza pionowy gradient tła (domyślnie wył. = tło jednolite) |
+| **Background → Colors** | Kolor górny i dolny tła (dolny używany tylko przy gradiencie) |
 | **Chart range → Auto scale** | Auto-skalowanie osi Y do danych (domyślnie wł.) |
-| **Chart range → Min / Max** | Stałe granice osi Y (aktywne, gdy „Auto scale" wyłączone) |
+| **Chart range → Min / Max** | Własne granice osi Y wpisane przez użytkownika (aktywne, gdy „Auto scale" wyłączone) |
 
 Zmiany widać na klawiszu na żywo. Odświeżanie odczytu następuje co 1 sekundę.
 
