@@ -1,6 +1,6 @@
 {
   "name": "com.streamdeck.afterburner",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Runtime dependencies bundled with the plugin (native modules kept external by esbuild)",
   "dependencies": {
     "koffi": "^2.9.0"

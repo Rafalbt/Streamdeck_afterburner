@@ -1,6 +1,6 @@
 {
   "name": "streamdeck-afterburner",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Stream Deck plugin displaying MSI Afterburner hardware sensors",
   "type": "module",
   "scripts": {

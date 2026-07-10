@@ -48,22 +48,35 @@ function frame(inner: string, bg: string): string {
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="${bg}"/>${inner}</svg>`;
 }
 
-/** Vertical anchor (dominant-baseline central) for a value position, in 72-space. */
-function valueY(pos: ActionSettings["valuePosition"]): number {
-  return pos === "top" ? 24 : pos === "bottom" ? 46 : 36;
+/** Label font size relative to the value font (smaller, capped). */
+function labelSize(valueFont: number): number {
+  return Math.max(8, Math.min(12, Math.round(valueFont * 0.5)));
+}
+
+/**
+ * Vertical center (dominant-baseline central) for the value, in 72-space.
+ * Font- and label-aware so "top"/"bottom" actually hug the edges regardless of
+ * text size, leaving room for the label underneath.
+ */
+function valueY(pos: ActionSettings["valuePosition"], font: number, hasLabel: boolean): number {
+  const margin = 4;
+  const labelH = hasLabel ? labelSize(font) + 2 : 0;
+  if (pos === "top") return margin + font / 2;
+  if (pos === "bottom") return H - margin - labelH - font / 2;
+  return H / 2 - labelH / 2;
 }
 
 /** A smaller, dimmed label drawn directly under the value (empty string when no text). */
 function labelUnder(text: string, valueYPos: number, valueFont: number, color: string): string {
   if (!text) return "";
-  const size = Math.max(8, Math.min(12, Math.round(valueFont * 0.5)));
+  const size = labelSize(valueFont);
   const y = Math.min(H - 3, valueYPos + valueFont / 2 + size / 2 + 2);
   return `<text x="36" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-family="sans-serif" font-size="${size}" opacity="0.75">${esc(text)}</text>`;
 }
 
 /** Current value (with unit) at the configured position, with the label underneath. */
 export function renderText(value: string, unit: string, s: ActionSettings): string {
-  const vy = valueY(s.valuePosition);
+  const vy = valueY(s.valuePosition, s.textSize, s.label !== "");
   const unitTspan = unit
     ? `<tspan font-size="${Math.max(8, Math.round(s.textSize * 0.55))}"> ${esc(unit)}</tspan>`
     : "";
@@ -125,7 +138,7 @@ export function renderChart(history: number[], unit: string, s: ActionSettings):
 
   const current = formatValue(history[history.length - 1], unit);
   const valueLabel = unit ? `${current}${unit}` : current;
-  const vy = valueY(s.valuePosition);
+  const vy = valueY(s.valuePosition, 14, s.label !== "");
   const inner =
     gradient +
     `<polygon points="${area}" fill="url(#fill)" stroke="none"/>` +
