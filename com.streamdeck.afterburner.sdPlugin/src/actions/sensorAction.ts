@@ -11,7 +11,7 @@ import streamDeck, {
 import type { JsonValue } from "@elgato/utils";
 
 import { readMahm, findEntry, acquire, release } from "../mahm.js";
-import { renderText, renderChart, renderMessage, formatValue, toImage } from "../renderer.js";
+import { renderText, renderChart, renderMessage, formatValue, convertUnit, toImage } from "../renderer.js";
 import { ActionSettings, withDefaults, HISTORY_MAX } from "../settings.js";
 
 const REFRESH_MS = 1_000;
@@ -67,9 +67,12 @@ export class SensorAction extends SingletonAction<ActionSettings> {
     if (!state) return;
 
     const next = withDefaults(ev.payload.settings);
-    // Clear history when the monitored sensor changes, otherwise the chart would
-    // briefly blend samples from two different metrics.
-    if (next.parameterName !== state.settings.parameterName) {
+    // Clear history when the monitored sensor or its display unit changes,
+    // otherwise the chart would briefly blend samples of different scale.
+    if (
+      next.parameterName !== state.settings.parameterName ||
+      next.memoryUnit !== state.settings.memoryUnit
+    ) {
       state.history = [];
     }
     state.settings = next;
@@ -121,12 +124,13 @@ export class SensorAction extends SingletonAction<ActionSettings> {
         return;
       }
 
+      const { value, unit } = convertUnit(entry.value, entry.unit, settings.memoryUnit);
       if (settings.displayMode === "chart") {
-        state.history.push(entry.value);
+        state.history.push(value);
         if (state.history.length > HISTORY_MAX) state.history.shift();
-        await action.setImage(toImage(renderChart(state.history, entry.unit, settings)));
+        await action.setImage(toImage(renderChart(state.history, unit, settings)));
       } else {
-        await action.setImage(toImage(renderText(formatValue(entry.value), entry.unit, settings)));
+        await action.setImage(toImage(renderText(formatValue(value, unit), unit, settings)));
       }
     } catch (err) {
       console.error("afterburner tick error:", err);

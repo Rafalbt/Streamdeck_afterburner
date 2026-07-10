@@ -16,6 +16,7 @@ Każdy klawisz może niezależnie monitorować inny parametr. Plugin działa jak
 - 🎯 **Zakres osi Y wykresu** — auto-skalowanie do danych, albo własne granice min/max wpisane przez użytkownika (np. 30–85)
 - 🏷️ **Własny label** — mniejszy tekst pod wartością (np. „GPU", „CPU")
 - ↕️ **Pozycja wartości** — góra / środek / dół (label podąża pod wartością)
+- 💾 **Jednostka pamięci** — dla czujników w MB można przełączyć na GB (1 miejsce po przecinku)
 - 🎨 **Konfigurowalne kolory** tekstu i wykresu oraz rozmiar tekstu
 - 🌈 **Wypełnienie pod wykresem** — gradient najmocniejszy tuż przy linii, zanikający w dół (kolorem wykresu)
 - 🔢 **Wiele klawiszy naraz** — ta sama akcja na kilku klawiszach, każdy z innym czujnikiem
@@ -67,6 +68,7 @@ Po `npm run link` w Stream Decku, na liście akcji po prawej, pojawi się katego
 | **Display** | `Text` (wartość) lub `Chart` (mini-wykres) |
 | **Label** | Opcjonalny tekst pod wartością (puste = ukryty) |
 | **Value position** | Pozycja wartości: `Top` / `Center` / `Bottom` |
+| **Memory unit** | `MB` lub `GB` (1 miejsce po przecinku) — widoczne tylko dla czujników w MB |
 | **Text color** | Kolor tekstu wartości/labela |
 | **Chart color** | Kolor linii wykresu |
 | **Text size** | Rozmiar tekstu wartości (10–40) |

@@ -17,6 +17,8 @@ export interface ActionSettings extends JsonObject {
   label: string;
   /** Vertical position of the value (the label follows directly underneath). */
   valuePosition: "top" | "center" | "bottom";
+  /** Display unit for memory sensors reported in MB: keep MB, or convert to GB (1 decimal). */
+  memoryUnit: "MB" | "GB";
   /** Chart mode: when true the Y axis auto-scales to the data (default). */
   chartAuto: boolean;
   /** Chart mode: fixed Y-axis minimum when `chartAuto` is false. */
@@ -34,6 +36,7 @@ export const DEFAULTS: ActionSettings = {
   bgColor: "#000000",
   label: "",
   valuePosition: "center",
+  memoryUnit: "MB",
   chartAuto: true,
   chartMin: 0,
   chartMax: 100,

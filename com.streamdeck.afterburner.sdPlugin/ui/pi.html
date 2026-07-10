@@ -57,6 +57,16 @@
       </div>
     </div>
 
+    <div class="row" id="memUnitRow" style="display: none">
+      <label for="memoryUnit">Memory unit</label>
+      <div class="control">
+        <select id="memoryUnit">
+          <option value="MB">MB</option>
+          <option value="GB">GB (1 decimal)</option>
+        </select>
+      </div>
+    </div>
+
     <div class="row">
       <label for="textColor">Text color</label>
       <div class="control"><input type="color" id="textColor" /></div>
@@ -104,6 +114,7 @@
         bgColor: "#000000",
         label: "",
         valuePosition: "center",
+        memoryUnit: "MB",
         chartAuto: true,
         chartMin: 0,
         chartMax: 100,
@@ -117,6 +128,8 @@
       const $paramHint = document.getElementById("paramHint");
       const $label = document.getElementById("label");
       const $valuePosition = document.getElementById("valuePosition");
+      const $memoryUnit = document.getElementById("memoryUnit");
+      const $memUnitRow = document.getElementById("memUnitRow");
       const $chartAuto = document.getElementById("chartAuto");
       const $chartMin = document.getElementById("chartMin");
       const $chartMax = document.getElementById("chartMax");
@@ -161,10 +174,18 @@
         $sizeValue.textContent = settings.textSize + "px";
         $label.value = settings.label;
         $valuePosition.value = settings.valuePosition;
+        $memoryUnit.value = settings.memoryUnit;
         $chartAuto.checked = settings.chartAuto;
         $chartMin.value = settings.chartMin;
         $chartMax.value = settings.chartMax;
         updateRangeEnabled();
+      }
+
+      // The memory-unit toggle only makes sense for sensors reported in MB.
+      function updateMemUnitVisibility() {
+        const opt = $param.selectedOptions[0];
+        const isMB = opt && opt.dataset.unit === "MB";
+        $memUnitRow.style.display = isMB ? "flex" : "none";
       }
 
       function updateRangeEnabled() {
@@ -191,6 +212,7 @@
           const opt = document.createElement("option");
           opt.value = it.name;
           opt.textContent = it.unit ? it.name + " (" + it.unit + ")" : it.name;
+          opt.dataset.unit = it.unit || "";
           $param.appendChild(opt);
         });
         // Preserve current selection; fall back to the first sensor.
@@ -201,11 +223,17 @@
           $param.value = settings.parameterName;
           saveSettings();
         }
+        updateMemUnitVisibility();
       }
 
       // ---- UI event handlers ----
       $param.addEventListener("change", function () {
         settings.parameterName = $param.value;
+        updateMemUnitVisibility();
+        saveSettings();
+      });
+      $memoryUnit.addEventListener("change", function () {
+        settings.memoryUnit = $memoryUnit.value;
         saveSettings();
       });
       document.querySelectorAll('input[name="mode"]').forEach(function (r) {

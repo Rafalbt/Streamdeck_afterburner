@@ -18,13 +18,26 @@ function esc(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
-/** Format a raw sensor float into a compact display string. */
-export function formatValue(v: number): string {
+/** Format a value into a compact display string. GB always keeps one decimal. */
+export function formatValue(v: number, unit?: string): string {
   if (!Number.isFinite(v)) return "--";
+  if (unit === "GB") return v.toFixed(1);
   const abs = Math.abs(v);
   if (abs >= 1000) return Math.round(v).toString();
   if (abs >= 100) return v.toFixed(0);
   return (Math.round(v * 10) / 10).toString();
+}
+
+/** Apply the memory-unit preference: convert an MB reading to GB when requested. */
+export function convertUnit(
+  value: number,
+  unit: string,
+  memoryUnit: ActionSettings["memoryUnit"],
+): { value: number; unit: string } {
+  if (unit === "MB" && memoryUnit === "GB") {
+    return { value: value / 1024, unit: "GB" };
+  }
+  return { value, unit };
 }
 
 function frame(inner: string, bg: string): string {
@@ -64,7 +77,7 @@ export function renderText(value: string, unit: string, s: ActionSettings): stri
  */
 export function renderChart(history: number[], unit: string, s: ActionSettings): string {
   if (history.length < 2) {
-    return renderText(formatValue(history[history.length - 1] ?? NaN), unit, s);
+    return renderText(formatValue(history[history.length - 1] ?? NaN, unit), unit, s);
   }
 
   const pad = 6;
@@ -110,7 +123,7 @@ export function renderChart(history: number[], unit: string, s: ActionSettings):
     `<stop offset="1" stop-color="${s.chartColor}" stop-opacity="0"/>` +
     `</linearGradient></defs>`;
 
-  const current = formatValue(history[history.length - 1]);
+  const current = formatValue(history[history.length - 1], unit);
   const valueLabel = unit ? `${current}${unit}` : current;
   const vy = valueY(s.valuePosition);
   const inner =
