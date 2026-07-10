@@ -93,6 +93,21 @@ Typowy cykl: `npm run watch` w tle + `npm run restart` po zmianach w kodzie plug
 
 ---
 
+## Budowanie paczki `.streamDeckPlugin`
+
+Aby zbudować plik instalacyjny do dystrybucji (dwuklik = instalacja, także na innym komputerze):
+
+```bash
+npm run build
+npx streamdeck pack com.streamdeck.afterburner.sdPlugin --output dist --force
+```
+
+Gotowa paczka pojawi się w `dist/com.streamdeck.afterburner.streamDeckPlugin`. Zawiera zbudowany `bin/plugin.js` oraz `koffi`, więc do instalacji nie jest potrzebny toolchain deweloperski — wystarczy dwuklik na plik.
+
+> Upewnij się, że `koffi` jest zainstalowane w folderze wtyczki (`cd com.streamdeck.afterburner.sdPlugin && npm install`), bo pakiet dołącza `node_modules` wtyczki.
+
+---
+
 ## Jak to działa
 
 ```
