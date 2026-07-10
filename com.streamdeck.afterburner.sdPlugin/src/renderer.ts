@@ -59,7 +59,7 @@ function labelSize(valueFont: number): number {
  * text size, leaving room for the label underneath.
  */
 function valueY(pos: ActionSettings["valuePosition"], font: number, hasLabel: boolean): number {
-  const margin = 4;
+  const margin = 8;
   const labelH = hasLabel ? labelSize(font) + 2 : 0;
   if (pos === "top") return margin + font / 2;
   if (pos === "bottom") return H - margin - labelH - font / 2;
