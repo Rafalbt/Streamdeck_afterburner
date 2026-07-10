@@ -75,24 +75,20 @@ export function renderText(value: string, unit: string, s: ActionSettings): stri
 }
 
 /**
- * Mini line chart of recent history. The current value and optional label are
- * placed per `valuePosition` / `labelPosition`, and the line reserves room at
- * those edges. Falls back to text rendering with too few samples to draw a line.
+ * Mini line chart of recent history. The line always occupies the same fixed
+ * area (independent of `valuePosition`); the current value and its label are
+ * drawn on top per `valuePosition`. Falls back to text rendering with too few
+ * samples to draw a line.
  */
 export function renderChart(history: number[], unit: string, s: ActionSettings): string {
   if (history.length < 2) {
     return renderText(formatValue(history[history.length - 1] ?? NaN, unit), unit, s);
   }
 
+  // Fixed plot area — moving the value text must not shift the chart line.
   const pad = 6;
-
-  // Reserve vertical room at the edge holding the value (+ its label underneath)
-  // so the line never draws over the text. Center overlays the chart on purpose.
-  const reserve = s.label !== "" ? 38 : 22;
-  const topPad = s.valuePosition === "top" ? reserve : pad;
-  const botPad = s.valuePosition === "bottom" ? reserve : pad;
-  const plotTop = topPad;
-  const plotH = H - topPad - botPad;
+  const plotTop = pad;
+  const plotH = H - 2 * pad;
 
   // Fixed thresholds when configured, otherwise auto-scale to the data.
   let min: number;
