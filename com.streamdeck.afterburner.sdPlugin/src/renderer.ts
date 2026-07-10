@@ -18,24 +18,28 @@ function esc(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
-/** Format a value into a compact display string. GB always keeps one decimal. */
+/** Format a value into a compact display string. GB/GHz keep fixed decimals. */
 export function formatValue(v: number, unit?: string): string {
   if (!Number.isFinite(v)) return "--";
   if (unit === "GB") return v.toFixed(1);
+  if (unit === "GHz") return v.toFixed(2);
   const abs = Math.abs(v);
   if (abs >= 1000) return Math.round(v).toString();
   if (abs >= 100) return v.toFixed(0);
   return (Math.round(v * 10) / 10).toString();
 }
 
-/** Apply the memory-unit preference: convert an MB reading to GB when requested. */
+/** Apply unit preferences: MB->GB (÷1024) and MHz->GHz (÷1000) when requested. */
 export function convertUnit(
   value: number,
   unit: string,
-  memoryUnit: ActionSettings["memoryUnit"],
+  s: Pick<ActionSettings, "memoryUnit" | "frequencyUnit">,
 ): { value: number; unit: string } {
-  if (unit === "MB" && memoryUnit === "GB") {
+  if (unit === "MB" && s.memoryUnit === "GB") {
     return { value: value / 1024, unit: "GB" };
+  }
+  if (unit === "MHz" && s.frequencyUnit === "GHz") {
+    return { value: value / 1000, unit: "GHz" };
   }
   return { value, unit };
 }

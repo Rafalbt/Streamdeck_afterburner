@@ -19,6 +19,8 @@ export interface ActionSettings extends JsonObject {
   valuePosition: "top" | "center" | "bottom";
   /** Display unit for memory sensors reported in MB: keep MB, or convert to GB (1 decimal). */
   memoryUnit: "MB" | "GB";
+  /** Display unit for clock sensors reported in MHz: keep MHz, or convert to GHz (2 decimals). */
+  frequencyUnit: "MHz" | "GHz";
   /** Chart mode: when true the Y axis auto-scales to the data (default). */
   chartAuto: boolean;
   /** Chart mode: fixed Y-axis minimum when `chartAuto` is false. */
@@ -37,6 +39,7 @@ export const DEFAULTS: ActionSettings = {
   label: "",
   valuePosition: "center",
   memoryUnit: "MB",
+  frequencyUnit: "MHz",
   chartAuto: true,
   chartMin: 0,
   chartMax: 100,

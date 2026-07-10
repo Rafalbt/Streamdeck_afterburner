@@ -71,7 +71,8 @@ export class SensorAction extends SingletonAction<ActionSettings> {
     // otherwise the chart would briefly blend samples of different scale.
     if (
       next.parameterName !== state.settings.parameterName ||
-      next.memoryUnit !== state.settings.memoryUnit
+      next.memoryUnit !== state.settings.memoryUnit ||
+      next.frequencyUnit !== state.settings.frequencyUnit
     ) {
       state.history = [];
     }
@@ -124,7 +125,7 @@ export class SensorAction extends SingletonAction<ActionSettings> {
         return;
       }
 
-      const { value, unit } = convertUnit(entry.value, entry.unit, settings.memoryUnit);
+      const { value, unit } = convertUnit(entry.value, entry.unit, settings);
       if (settings.displayMode === "chart") {
         state.history.push(value);
         if (state.history.length > HISTORY_MAX) state.history.shift();

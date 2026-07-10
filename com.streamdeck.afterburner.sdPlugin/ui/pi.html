@@ -67,6 +67,16 @@
       </div>
     </div>
 
+    <div class="row" id="freqUnitRow" style="display: none">
+      <label for="frequencyUnit">Clock unit</label>
+      <div class="control">
+        <select id="frequencyUnit">
+          <option value="MHz">MHz</option>
+          <option value="GHz">GHz (2 decimals)</option>
+        </select>
+      </div>
+    </div>
+
     <div class="row">
       <label for="textColor">Text color</label>
       <div class="control"><input type="color" id="textColor" /></div>
@@ -115,6 +125,7 @@
         label: "",
         valuePosition: "center",
         memoryUnit: "MB",
+        frequencyUnit: "MHz",
         chartAuto: true,
         chartMin: 0,
         chartMax: 100,
@@ -130,6 +141,8 @@
       const $valuePosition = document.getElementById("valuePosition");
       const $memoryUnit = document.getElementById("memoryUnit");
       const $memUnitRow = document.getElementById("memUnitRow");
+      const $frequencyUnit = document.getElementById("frequencyUnit");
+      const $freqUnitRow = document.getElementById("freqUnitRow");
       const $chartAuto = document.getElementById("chartAuto");
       const $chartMin = document.getElementById("chartMin");
       const $chartMax = document.getElementById("chartMax");
@@ -175,17 +188,19 @@
         $label.value = settings.label;
         $valuePosition.value = settings.valuePosition;
         $memoryUnit.value = settings.memoryUnit;
+        $frequencyUnit.value = settings.frequencyUnit;
         $chartAuto.checked = settings.chartAuto;
         $chartMin.value = settings.chartMin;
         $chartMax.value = settings.chartMax;
         updateRangeEnabled();
       }
 
-      // The memory-unit toggle only makes sense for sensors reported in MB.
-      function updateMemUnitVisibility() {
+      // Unit toggles only make sense for the matching sensor units (MB, MHz).
+      function updateUnitRows() {
         const opt = $param.selectedOptions[0];
-        const isMB = opt && opt.dataset.unit === "MB";
-        $memUnitRow.style.display = isMB ? "flex" : "none";
+        const unit = opt ? opt.dataset.unit : "";
+        $memUnitRow.style.display = unit === "MB" ? "flex" : "none";
+        $freqUnitRow.style.display = unit === "MHz" ? "flex" : "none";
       }
 
       function updateRangeEnabled() {
@@ -223,17 +238,21 @@
           $param.value = settings.parameterName;
           saveSettings();
         }
-        updateMemUnitVisibility();
+        updateUnitRows();
       }
 
       // ---- UI event handlers ----
       $param.addEventListener("change", function () {
         settings.parameterName = $param.value;
-        updateMemUnitVisibility();
+        updateUnitRows();
         saveSettings();
       });
       $memoryUnit.addEventListener("change", function () {
         settings.memoryUnit = $memoryUnit.value;
+        saveSettings();
+      });
+      $frequencyUnit.addEventListener("change", function () {
+        settings.frequencyUnit = $frequencyUnit.value;
         saveSettings();
       });
       document.querySelectorAll('input[name="mode"]').forEach(function (r) {
