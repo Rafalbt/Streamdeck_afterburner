@@ -8,7 +8,7 @@ Elgato Stream Deck plugin that displays MSI Afterburner hardware sensors (temper
 
 Runs as a **single Node.js process** — no helper binary. Sensor data is read directly from MSI Afterburner's `MAHMSharedMemory` shared memory via `koffi` (FFI). Key images are built as **SVG strings** — no canvas/native graphics library.
 
-`plan-implementacji-streamdeck-afterburner.md` (Polish) is the original design doc/roadmap. Sibling project `D:\dev\d4-streamdeck` is a working plugin using the same SDK and the esbuild/launcher build model this project copies.
+Sibling project `D:\dev\d4-streamdeck` is a working plugin using the same SDK and the esbuild/launcher build model this project copies.
 
 ## Commands
 
