@@ -10,6 +10,9 @@
  * so the caller is responsible for a floor and for restoring auto control.
  */
 import koffi from "koffi";
+import streamDeck from "@elgato/streamdeck";
+
+const log = streamDeck.logger;
 
 export type Vendor = "nvidia" | "amd" | "none";
 
@@ -78,9 +81,9 @@ function initNvapi(): boolean {
     nvGpu0 = koffi.decode(handles, "void *"); // first GPU handle
     nvGetTach = getTach as unknown as (gpu: unknown, rpmBuf: Buffer) => number;
     nvReady = true;
-    console.log(`[fan] NVAPI initialized (${n} GPU[s])`);
+    log.info(`[fan] NVAPI initialized (${n} GPU[s])`);
   } catch (e) {
-    console.error("[fan] NVAPI init failed:", e);
+    log.error("[fan] NVAPI init failed:", e);
   }
   return nvReady;
 }
@@ -92,12 +95,12 @@ export function readFanRpm(): number | null {
     const rpm = Buffer.alloc(4);
     const st = nvGetTach(nvGpu0, rpm);
     if (st !== 0) {
-      console.error(`[fan] GetTachReading status ${st}`);
+      log.error(`[fan] GetTachReading status ${st}`);
       return null;
     }
     return rpm.readUInt32LE(0);
   } catch (e) {
-    console.error("[fan] GetTachReading error:", e);
+    log.error("[fan] GetTachReading error:", e);
     return null;
   }
 }
@@ -115,7 +118,7 @@ export function readFanPercent(): number | null {
  * PHASE 1 stub — logs and returns false (no hardware write yet).
  */
 export function setFanPercent(pct: number): boolean {
-  console.log(`[fan] setFanPercent(${pct}) — not yet implemented (${detectVendor()})`);
+  log.info(`[fan] setFanPercent(${pct}) — not yet implemented (${detectVendor()})`);
   return false;
 }
 
@@ -124,6 +127,6 @@ export function setFanPercent(pct: number): boolean {
  * PHASE 1 stub — logs and returns false.
  */
 export function restoreAuto(): boolean {
-  console.log(`[fan] restoreAuto() — not yet implemented (${detectVendor()})`);
+  log.info(`[fan] restoreAuto() — not yet implemented (${detectVendor()})`);
   return false;
 }
