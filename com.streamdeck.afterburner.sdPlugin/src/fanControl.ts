@@ -62,7 +62,9 @@ function initNvapi(): boolean {
     const resolve = (id: number, proto: string): (...a: unknown[]) => number => {
       const p = queryInterface(id);
       if (!p) throw new Error(`QueryInterface 0x${id.toString(16)} returned null`);
-      return koffi.decode(p, koffi.pointer(koffi.proto(proto))) as (...a: unknown[]) => number;
+      // koffi turns a function-pointer into a callable via decode(ptr, proto)
+      // — NOT wrapped in koffi.pointer() (that yields a non-callable object).
+      return koffi.decode(p, koffi.proto(proto)) as (...a: unknown[]) => number;
     };
 
     const initialize = resolve(NVID.Initialize, "int NvAPI_Initialize()");
