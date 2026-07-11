@@ -51,15 +51,26 @@ const NVID = {
   ClientFanCoolersSetControl: 0xa58971a5,
 } as const;
 
-// NV_GPU_CLIENT_FAN_COOLERS_CONTROL_V1 (reverse-engineered):
-//   u32 version; u32 count; u32 reserved[8];                 -> 40-byte header
-//   entry { u32 coolerId, level, controlMode; u32 reserved[8]; } -> 44 bytes, x32
-//   controlMode: 0 = auto, 1 = manual
-const FAN_CTRL_SIZE = 40 + 32 * 44; // 1448
-const FAN_CTRL_VERSION = (FAN_CTRL_SIZE | (1 << 16)) >>> 0;
-const FAN_CTRL_ENTRY = 44;
+// NV_GPU_CLIENT_FAN_COOLERS_CONTROL_V1 — exact size is reverse-engineered and
+// varies; we probe candidate sizes/versions once (read-only) and cache the one
+// the driver accepts. Header assumed 40 bytes (u32 version, count, reserved[8]).
+// Resolved layout (RTX 5080 / current driver): 44-byte header, 44-byte entries.
+//   header: u32 version, u32 _, u32 count (@8), u32 reserved[8]
+//   entry i @ (44 + i*44): u32 coolerId(+0), u32 level(+4), u32 controlMode(+8)
+const CTRL_VER_CANDIDATES = [1, 2, 3];
+const CTRL_COUNT_OFF = 8;
+const CTRL_HEADER_BYTES = 44;
+const CTRL_ENTRY_BYTES = 44;
+const CTRL_LEVEL_OFF = 4;
+const CTRL_MODE_OFF = 8;
 const CTRL_MODE_AUTO = 0;
 const CTRL_MODE_MANUAL = 1;
+
+/** Never command a duty below this, to avoid overheating. */
+const FAN_MIN_PCT = 30;
+
+let ctrlSize = 0; // resolved by probeControl()
+let ctrlVersion = 0;
 
 // NV_GPU_CLIENT_FAN_COOLERS_STATUS_V1 (reverse-engineered layout):
 //   u32 version; u32 count; u32 reserved[8];                    -> 40-byte header
@@ -157,41 +168,73 @@ export function readFanPercent(): number | null {
   return readFanStatus()?.level ?? null;
 }
 
-/** Read the control struct via GetControl (read-only). Returns the buffer + count. */
-function getControlBuffer(): { buf: Buffer; count: number } | null {
-  if (detectVendor() !== "nvidia" || !initNvapi() || !nvGetControl || !nvGpu0) return null;
-  const buf = Buffer.alloc(FAN_CTRL_SIZE);
-  buf.writeUInt32LE(FAN_CTRL_VERSION, 0);
-  const st = nvGetControl(nvGpu0, buf);
-  if (st !== 0) {
-    log.error(`[fan] ClientFanCoolersGetControl status ${st} (ver=0x${FAN_CTRL_VERSION.toString(16)}, size=${FAN_CTRL_SIZE})`);
-    return null;
+/** Brute-force the control-struct size/version once by sweeping sizes (read-only). */
+function probeControl(): boolean {
+  if (ctrlSize) return true;
+  if (!nvGetControl || !nvGpu0) return false;
+  const notable: string[] = [];
+  for (let size = 8; size <= 8192; size += 4) {
+    for (const ver of CTRL_VER_CANDIDATES) {
+      const version = (size | (ver << 16)) >>> 0;
+      const buf = Buffer.alloc(size);
+      buf.writeUInt32LE(version, 0);
+      const st = nvGetControl(nvGpu0, buf);
+      if (st !== -9) notable.push(`size=${size} ver=${ver} -> ${st}`); // -9 = wrong version
+      if (st === 0) {
+        ctrlSize = size;
+        ctrlVersion = version;
+        log.info(`[fan] CONTROL struct resolved: size=${size} ver=${ver}`);
+        log.info(`[fan] probe notable: ${notable.join(" | ")}`);
+        return true;
+      }
+    }
   }
-  const count = buf.readUInt32LE(4);
-  const level0 = buf.readUInt32LE(40 + 4);
-  const mode0 = buf.readUInt32LE(40 + 8);
-  log.info(`[fan] GetControl ok: count=${count} entry0 level=${level0}% mode=${mode0}`);
-  return { buf, count };
+  log.error(`[fan] probeControl sweep: nothing returned 0. notable(non -9): ${notable.join(" | ") || "none"}`);
+  return false;
 }
 
 /**
  * Request a fan duty percentage (0-100). Returns true if applied.
- * PHASE 2b (validation): reads the control struct via GetControl and logs the
- * intended change, but does NOT write yet — enabling SetControl comes once the
- * control-struct layout is confirmed and the safety floor is in place.
+ * PHASE 2b (probe): resolves the control-struct layout via GetControl only
+ * (read-only) and logs the intended change; SetControl write is enabled once
+ * the layout is known and the safety floor is in place.
  */
-export function setFanPercent(pct: number): boolean {
-  const ctrl = getControlBuffer();
-  if (!ctrl) return false;
-  log.info(`[fan] would set ${ctrl.count} cooler(s) to ${pct}% manual (SetControl not yet enabled)`);
-  return false;
+/** Apply a control mode to every cooler: manual at `level%`, or restore auto. */
+function applyControl(mode: number, level: number): boolean {
+  if (detectVendor() !== "nvidia" || !initNvapi() || !nvGetControl || !nvSetControl || !nvGpu0) return false;
+  if (!probeControl()) return false;
+  const buf = Buffer.alloc(ctrlSize);
+  buf.writeUInt32LE(ctrlVersion, 0);
+  let st = nvGetControl(nvGpu0, buf);
+  if (st !== 0) {
+    log.error(`[fan] GetControl status ${st}`);
+    return false;
+  }
+  const count = buf.readUInt32LE(CTRL_COUNT_OFF);
+  for (let i = 0; i < count && i < 32; i++) {
+    const base = CTRL_HEADER_BYTES + i * CTRL_ENTRY_BYTES;
+    buf.writeUInt32LE(mode, base + CTRL_MODE_OFF);
+    if (mode === CTRL_MODE_MANUAL) buf.writeUInt32LE(level, base + CTRL_LEVEL_OFF);
+  }
+  st = nvSetControl(nvGpu0, buf);
+  if (st !== 0) {
+    log.error(`[fan] SetControl status ${st}`);
+    return false;
+  }
+  log.info(`[fan] SetControl ok: ${count} cooler(s) mode=${mode} level=${mode === CTRL_MODE_MANUAL ? level + "%" : "auto"}`);
+  return true;
 }
 
 /**
- * Restore automatic (driver/Afterburner) fan control.
- * PHASE 1 stub — logs and returns false.
+ * Request a fan duty percentage. Clamped to [FAN_MIN_PCT, 100] for safety.
+ * Sets every cooler to manual at that duty.
  */
+export function setFanPercent(pct: number): boolean {
+  const level = Math.max(FAN_MIN_PCT, Math.min(100, Math.round(pct)));
+  return applyControl(CTRL_MODE_MANUAL, level);
+}
+
+/** Restore automatic fan control for every cooler. */
 export function restoreAuto(): boolean {
-  log.info(`[fan] restoreAuto() — not yet implemented (${detectVendor()})`);
-  return false;
+  return applyControl(CTRL_MODE_AUTO, 0);
 }
