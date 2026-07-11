@@ -46,12 +46,19 @@ export function detectVendor(): Vendor {
 const NVID = {
   Initialize: 0x0150e828,
   EnumPhysicalGPUs: 0xe5ac921f,
-  GetTachReading: 0x5f608315,
+  ClientFanCoolersGetStatus: 0x35aed5e8,
 } as const;
+
+// NV_GPU_CLIENT_FAN_COOLERS_STATUS_V1 (reverse-engineered layout):
+//   u32 version; u32 count; u32 reserved[8];                    -> 40-byte header
+//   entry { u32 coolerId, currentRpm, currentMinLevel,
+//           currentMaxLevel, currentLevel; u32 reserved[8]; }   -> 52 bytes, x32
+const FAN_STATUS_SIZE = 40 + 32 * 52; // 1704
+const FAN_STATUS_VERSION = (FAN_STATUS_SIZE | (1 << 16)) >>> 0;
 
 let nvReady: boolean | undefined;
 let nvGpu0: unknown = null;
-let nvGetTach: ((gpu: unknown, rpmBuf: Buffer) => number) | null = null;
+let nvGetStatus: ((gpu: unknown, statusBuf: Buffer) => number) | null = null;
 
 function initNvapi(): boolean {
   if (nvReady !== undefined) return nvReady;
@@ -69,7 +76,10 @@ function initNvapi(): boolean {
 
     const initialize = resolve(NVID.Initialize, "int NvAPI_Initialize()");
     const enumGpus = resolve(NVID.EnumPhysicalGPUs, "int NvAPI_EnumPhysicalGPUs(void* handles, void* count)");
-    const getTach = resolve(NVID.GetTachReading, "int NvAPI_GPU_GetTachReading(void* gpu, void* rpm)");
+    const getStatus = resolve(
+      NVID.ClientFanCoolersGetStatus,
+      "int NvAPI_GPU_ClientFanCoolersGetStatus(void* gpu, void* status)",
+    );
 
     let st = initialize();
     if (st !== 0) throw new Error(`NvAPI_Initialize status ${st}`);
@@ -81,7 +91,7 @@ function initNvapi(): boolean {
     if (st !== 0 || n === 0) throw new Error(`NvAPI_EnumPhysicalGPUs status ${st}, count ${n}`);
 
     nvGpu0 = koffi.decode(handles, "void *"); // first GPU handle
-    nvGetTach = getTach as unknown as (gpu: unknown, rpmBuf: Buffer) => number;
+    nvGetStatus = getStatus as unknown as (gpu: unknown, statusBuf: Buffer) => number;
     nvReady = true;
     log.info(`[fan] NVAPI initialized (${n} GPU[s])`);
   } catch (e) {
@@ -90,29 +100,37 @@ function initNvapi(): boolean {
   return nvReady;
 }
 
-/** Current fan speed in RPM via NVAPI, or null when unavailable. */
-export function readFanRpm(): number | null {
-  if (detectVendor() !== "nvidia" || !initNvapi() || !nvGetTach || !nvGpu0) return null;
+/** Read cooler 0 status (rpm + duty %) via the client fan coolers API. */
+function readFanStatus(): { rpm: number; level: number } | null {
+  if (detectVendor() !== "nvidia" || !initNvapi() || !nvGetStatus || !nvGpu0) return null;
   try {
-    const rpm = Buffer.alloc(4);
-    const st = nvGetTach(nvGpu0, rpm);
+    const buf = Buffer.alloc(FAN_STATUS_SIZE);
+    buf.writeUInt32LE(FAN_STATUS_VERSION, 0);
+    const st = nvGetStatus(nvGpu0, buf);
     if (st !== 0) {
-      log.error(`[fan] GetTachReading status ${st}`);
+      log.error(`[fan] ClientFanCoolersGetStatus status ${st} (ver=0x${FAN_STATUS_VERSION.toString(16)}, size=${FAN_STATUS_SIZE})`);
       return null;
     }
-    return rpm.readUInt32LE(0);
+    const count = buf.readUInt32LE(4);
+    const base = 40; // first entry
+    const rpm = buf.readUInt32LE(base + 4);
+    const level = buf.readUInt32LE(base + 16);
+    log.info(`[fan] status ok: coolers=${count} rpm=${rpm} level=${level}%`);
+    return { rpm, level };
   } catch (e) {
-    log.error("[fan] GetTachReading error:", e);
+    log.error("[fan] ClientFanCoolersGetStatus error:", e);
     return null;
   }
 }
 
-/**
- * Read the current fan duty as a percentage (0-100), or null when unknown.
- * PHASE 2b/3 will read the duty via NVAPI cooler settings / ADL.
- */
+/** Current fan speed in RPM via NVAPI, or null when unavailable. */
+export function readFanRpm(): number | null {
+  return readFanStatus()?.rpm ?? null;
+}
+
+/** Current fan duty as a percentage (0-100), or null when unknown. */
 export function readFanPercent(): number | null {
-  return null;
+  return readFanStatus()?.level ?? null;
 }
 
 /**
