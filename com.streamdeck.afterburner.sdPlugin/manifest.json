@@ -2,7 +2,7 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "com.streamdeck.afterburner",
   "Name": "Afterburner Sensors",
-  "Version": "0.1.4.0",
+  "Version": "0.1.5.0",
   "Author": "hwinfi",
   "Description": "Show any MSI Afterburner sensor (temperature, load, clock, ...) on a key as text or a mini chart.",
   "Category": "Afterburner Sensors",
@@ -44,7 +44,9 @@
       "UUID": "com.streamdeck.afterburner.fan",
       "Icon": "imgs/action-icon",
       "Tooltip": "Control GPU fan speed with a Stream Deck + dial",
-      "Controllers": ["Encoder"],
+      "Controllers": [
+        "Encoder"
+      ],
       "Encoder": {
         "layout": "$B1",
         "TriggerDescription": {
@@ -52,7 +54,11 @@
           "Push": "Toggle auto/manual"
         }
       },
-      "States": [{ "Image": "imgs/action-icon" }]
+      "States": [
+        {
+          "Image": "imgs/action-icon"
+        }
+      ]
     }
   ]
 }
