@@ -220,7 +220,11 @@ function applyControl(mode: number, level: number): boolean {
     return false;
   }
   engagedManual = mode === CTRL_MODE_MANUAL;
-  log.info(`[fan] SetControl ok: ${count} cooler(s) mode=${mode} level=${mode === CTRL_MODE_MANUAL ? level + "%" : "auto"}`);
+  const back = readFanStatus();
+  log.info(
+    `[fan] SetControl ok: ${count} cooler(s) mode=${mode} level=${mode === CTRL_MODE_MANUAL ? level + "%" : "auto"}` +
+      (back ? ` | readback rpm=${back.rpm} level=${back.level}%` : ""),
+  );
   return true;
 }
 
