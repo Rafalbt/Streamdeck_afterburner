@@ -10,7 +10,7 @@ import {
 } from "@elgato/streamdeck";
 import type { JsonObject } from "@elgato/utils";
 
-import { detectVendor, readFanRpm, setFanPercent, restoreAuto } from "../fanControl.js";
+import { detectVendor, readFanRpm, fanMinPercent, setFanPercent, restoreAuto } from "../fanControl.js";
 
 /** Per-dial settings. */
 interface FanSettings extends JsonObject {
@@ -27,10 +27,12 @@ const REFRESH_MS = 1_000;
 interface DialState {
   settings: FanSettings;
   timer: ReturnType<typeof setInterval>;
+  /** Hardware-enforced minimum manual duty for this GPU. */
+  min: number;
 }
 
-function clampPct(n: number): number {
-  return Math.max(0, Math.min(100, Math.round(n)));
+function clampPct(n: number, min: number): number {
+  return Math.max(min, Math.min(100, Math.round(n)));
 }
 
 /**
@@ -51,9 +53,12 @@ export class FanAction extends SingletonAction<FanSettings> {
     await dial.setFeedbackLayout("$B1");
     await dial.setTriggerDescription({ rotate: "Fan %", push: settings.manual ? "Auto" : "Manual" });
 
+    const min = detectVendor() === "nvidia" ? fanMinPercent() : 0;
+    if (settings.targetPct < min) settings.targetPct = min;
+
     const id = dial.id;
     const timer = setInterval(() => void this.#render(dial, id), REFRESH_MS);
-    this.#dials.set(id, { settings, timer });
+    this.#dials.set(id, { settings, timer, min });
     // Re-apply a persisted manual setting when the dial (re)appears.
     if (settings.manual) setFanPercent(settings.targetPct);
     await this.#render(dial, id);
@@ -74,7 +79,7 @@ export class FanAction extends SingletonAction<FanSettings> {
     const dial = ev.action as DialAction<FanSettings>;
     const state = this.#dials.get(dial.id);
     if (!state) return;
-    state.settings.targetPct = clampPct(state.settings.targetPct + ev.payload.ticks * STEP);
+    state.settings.targetPct = clampPct(state.settings.targetPct + ev.payload.ticks * STEP, state.min);
     state.settings.manual = true;
     await dial.setSettings(state.settings);
     setFanPercent(state.settings.targetPct); // Phase 2b will actually apply this

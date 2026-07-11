@@ -66,7 +66,7 @@ const CTRL_MODE_OFF = 8;
 const CTRL_MODE_AUTO = 0;
 const CTRL_MODE_MANUAL = 1;
 
-/** Minimum commandable duty. 0 allows the card's zero-RPM (fan-stop) mode. */
+/** Absolute floor; the real minimum is read per-card via fanMinPercent(). */
 const FAN_MIN_PCT = 0;
 
 let ctrlSize = 0; // resolved by probeControl()
@@ -135,8 +135,10 @@ function initNvapi(): boolean {
   return nvReady;
 }
 
-/** Read cooler 0 status (rpm + duty %) via the client fan coolers API. */
-function readFanStatus(): { rpm: number; level: number } | null {
+// Status entry (offsets from entry base): coolerId+0, currentRpm+4,
+// currentMinLevel+8, currentMaxLevel+12, currentLevel+16.
+/** Read cooler 0 status (rpm + duty % + hardware min %) via the fan coolers API. */
+function readFanStatus(): { rpm: number; level: number; min: number } | null {
   if (detectVendor() !== "nvidia" || !initNvapi() || !nvGetStatus || !nvGpu0) return null;
   try {
     const buf = Buffer.alloc(FAN_STATUS_SIZE);
@@ -148,8 +150,9 @@ function readFanStatus(): { rpm: number; level: number } | null {
     }
     const base = 40; // first entry
     const rpm = buf.readUInt32LE(base + 4);
+    const min = buf.readUInt32LE(base + 8);
     const level = buf.readUInt32LE(base + 16);
-    return { rpm, level };
+    return { rpm, level, min };
   } catch (e) {
     log.error("[fan] ClientFanCoolersGetStatus error:", e);
     return null;
@@ -164,6 +167,11 @@ export function readFanRpm(): number | null {
 /** Current fan duty as a percentage (0-100), or null when unknown. */
 export function readFanPercent(): number | null {
   return readFanStatus()?.level ?? null;
+}
+
+/** Hardware-enforced minimum manual duty (%). Falls back to 30 when unknown. */
+export function fanMinPercent(): number {
+  return readFanStatus()?.min ?? 30;
 }
 
 /** Brute-force the control-struct size/version once by sweeping sizes (read-only). */
@@ -255,7 +263,8 @@ process.once("SIGTERM", () => {
  * thermals, and auto is restored when the plugin stops.
  */
 export function setFanPercent(pct: number): boolean {
-  const level = Math.max(FAN_MIN_PCT, Math.min(100, Math.round(pct)));
+  const min = Math.max(FAN_MIN_PCT, fanMinPercent());
+  const level = Math.max(min, Math.min(100, Math.round(pct)));
   return applyControl(CTRL_MODE_MANUAL, level);
 }
 
