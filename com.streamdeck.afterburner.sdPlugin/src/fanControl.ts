@@ -47,7 +47,19 @@ const NVID = {
   Initialize: 0x0150e828,
   EnumPhysicalGPUs: 0xe5ac921f,
   ClientFanCoolersGetStatus: 0x35aed5e8,
+  ClientFanCoolersGetControl: 0x814b209f,
+  ClientFanCoolersSetControl: 0xa58971a5,
 } as const;
+
+// NV_GPU_CLIENT_FAN_COOLERS_CONTROL_V1 (reverse-engineered):
+//   u32 version; u32 count; u32 reserved[8];                 -> 40-byte header
+//   entry { u32 coolerId, level, controlMode; u32 reserved[8]; } -> 44 bytes, x32
+//   controlMode: 0 = auto, 1 = manual
+const FAN_CTRL_SIZE = 40 + 32 * 44; // 1448
+const FAN_CTRL_VERSION = (FAN_CTRL_SIZE | (1 << 16)) >>> 0;
+const FAN_CTRL_ENTRY = 44;
+const CTRL_MODE_AUTO = 0;
+const CTRL_MODE_MANUAL = 1;
 
 // NV_GPU_CLIENT_FAN_COOLERS_STATUS_V1 (reverse-engineered layout):
 //   u32 version; u32 count; u32 reserved[8];                    -> 40-byte header
@@ -59,6 +71,8 @@ const FAN_STATUS_VERSION = (FAN_STATUS_SIZE | (1 << 16)) >>> 0;
 let nvReady: boolean | undefined;
 let nvGpu0: unknown = null;
 let nvGetStatus: ((gpu: unknown, statusBuf: Buffer) => number) | null = null;
+let nvGetControl: ((gpu: unknown, ctrlBuf: Buffer) => number) | null = null;
+let nvSetControl: ((gpu: unknown, ctrlBuf: Buffer) => number) | null = null;
 
 function initNvapi(): boolean {
   if (nvReady !== undefined) return nvReady;
@@ -80,6 +94,14 @@ function initNvapi(): boolean {
       NVID.ClientFanCoolersGetStatus,
       "int NvAPI_GPU_ClientFanCoolersGetStatus(void* gpu, void* status)",
     );
+    const getControl = resolve(
+      NVID.ClientFanCoolersGetControl,
+      "int NvAPI_GPU_ClientFanCoolersGetControl(void* gpu, void* control)",
+    );
+    const setControl = resolve(
+      NVID.ClientFanCoolersSetControl,
+      "int NvAPI_GPU_ClientFanCoolersSetControl(void* gpu, void* control)",
+    );
 
     let st = initialize();
     if (st !== 0) throw new Error(`NvAPI_Initialize status ${st}`);
@@ -92,6 +114,8 @@ function initNvapi(): boolean {
 
     nvGpu0 = koffi.decode(handles, "void *"); // first GPU handle
     nvGetStatus = getStatus as unknown as (gpu: unknown, statusBuf: Buffer) => number;
+    nvGetControl = getControl as unknown as (gpu: unknown, ctrlBuf: Buffer) => number;
+    nvSetControl = setControl as unknown as (gpu: unknown, ctrlBuf: Buffer) => number;
     nvReady = true;
     log.info(`[fan] NVAPI initialized (${n} GPU[s])`);
   } catch (e) {
@@ -133,12 +157,33 @@ export function readFanPercent(): number | null {
   return readFanStatus()?.level ?? null;
 }
 
+/** Read the control struct via GetControl (read-only). Returns the buffer + count. */
+function getControlBuffer(): { buf: Buffer; count: number } | null {
+  if (detectVendor() !== "nvidia" || !initNvapi() || !nvGetControl || !nvGpu0) return null;
+  const buf = Buffer.alloc(FAN_CTRL_SIZE);
+  buf.writeUInt32LE(FAN_CTRL_VERSION, 0);
+  const st = nvGetControl(nvGpu0, buf);
+  if (st !== 0) {
+    log.error(`[fan] ClientFanCoolersGetControl status ${st} (ver=0x${FAN_CTRL_VERSION.toString(16)}, size=${FAN_CTRL_SIZE})`);
+    return null;
+  }
+  const count = buf.readUInt32LE(4);
+  const level0 = buf.readUInt32LE(40 + 4);
+  const mode0 = buf.readUInt32LE(40 + 8);
+  log.info(`[fan] GetControl ok: count=${count} entry0 level=${level0}% mode=${mode0}`);
+  return { buf, count };
+}
+
 /**
  * Request a fan duty percentage (0-100). Returns true if applied.
- * PHASE 1 stub — logs and returns false (no hardware write yet).
+ * PHASE 2b (validation): reads the control struct via GetControl and logs the
+ * intended change, but does NOT write yet — enabling SetControl comes once the
+ * control-struct layout is confirmed and the safety floor is in place.
  */
 export function setFanPercent(pct: number): boolean {
-  log.info(`[fan] setFanPercent(${pct}) — not yet implemented (${detectVendor()})`);
+  const ctrl = getControlBuffer();
+  if (!ctrl) return false;
+  log.info(`[fan] would set ${ctrl.count} cooler(s) to ${pct}% manual (SetControl not yet enabled)`);
   return false;
 }
 
