@@ -66,8 +66,8 @@ const CTRL_MODE_OFF = 8;
 const CTRL_MODE_AUTO = 0;
 const CTRL_MODE_MANUAL = 1;
 
-/** Never command a duty below this, to avoid overheating. */
-const FAN_MIN_PCT = 30;
+/** Minimum commandable duty. 0 allows the card's zero-RPM (fan-stop) mode. */
+const FAN_MIN_PCT = 0;
 
 let ctrlSize = 0; // resolved by probeControl()
 let ctrlVersion = 0;
@@ -246,8 +246,9 @@ process.once("SIGTERM", () => {
 });
 
 /**
- * Request a fan duty percentage. Clamped to [FAN_MIN_PCT, 100] for safety.
- * Sets every cooler to manual at that duty.
+ * Request a fan duty percentage, clamped to [FAN_MIN_PCT, 100]. With
+ * FAN_MIN_PCT = 0 this permits fan-stop; the caller/user is responsible for
+ * thermals, and auto is restored when the plugin stops.
  */
 export function setFanPercent(pct: number): boolean {
   const level = Math.max(FAN_MIN_PCT, Math.min(100, Math.round(pct)));
