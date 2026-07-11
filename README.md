@@ -21,6 +21,7 @@ Każdy klawisz może niezależnie monitorować inny parametr. Plugin działa jak
 - 🎨 **Konfigurowalne kolory** tekstu i wykresu oraz rozmiar tekstu
 - 🌈 **Wypełnienie pod wykresem** — gradient najmocniejszy tuż przy linii, zanikający w dół (kolorem wykresu)
 - 🔢 **Wiele klawiszy naraz** — ta sama akcja na kilku klawiszach, każdy z innym czujnikiem
+- 🎛️ **Sterowanie wiatrakami dialem (Stream Deck +)** — obrót ustawia % obrotów, naciśnięcie przełącza auto/manual; pasek pokazuje RPM na żywo. Obecnie **NVIDIA** (przez NVAPI); AMD w planach
 - 🛡️ **Odporność na braki** — gdy Afterburner nie działa lub czujnik zniknął, klawisz pokazuje `N/A` zamiast się wywalać
 
 ---

@@ -146,11 +146,9 @@ function readFanStatus(): { rpm: number; level: number } | null {
       log.error(`[fan] ClientFanCoolersGetStatus status ${st} (ver=0x${FAN_STATUS_VERSION.toString(16)}, size=${FAN_STATUS_SIZE})`);
       return null;
     }
-    const count = buf.readUInt32LE(4);
     const base = 40; // first entry
     const rpm = buf.readUInt32LE(base + 4);
     const level = buf.readUInt32LE(base + 16);
-    log.info(`[fan] status ok: coolers=${count} rpm=${rpm} level=${level}%`);
     return { rpm, level };
   } catch (e) {
     log.error("[fan] ClientFanCoolersGetStatus error:", e);
@@ -221,9 +219,31 @@ function applyControl(mode: number, level: number): boolean {
     log.error(`[fan] SetControl status ${st}`);
     return false;
   }
+  engagedManual = mode === CTRL_MODE_MANUAL;
   log.info(`[fan] SetControl ok: ${count} cooler(s) mode=${mode} level=${mode === CTRL_MODE_MANUAL ? level + "%" : "auto"}`);
   return true;
 }
+
+// Safety: if we ever engaged manual control, restore auto when the plugin
+// process exits, so fans are never left pinned by a stopped plugin.
+let engagedManual = false;
+function restoreOnExit(): void {
+  if (!engagedManual) return;
+  try {
+    restoreAuto();
+  } catch {
+    // best effort during shutdown
+  }
+}
+process.once("exit", restoreOnExit);
+process.once("SIGINT", () => {
+  restoreOnExit();
+  process.exit(0);
+});
+process.once("SIGTERM", () => {
+  restoreOnExit();
+  process.exit(0);
+});
 
 /**
  * Request a fan duty percentage. Clamped to [FAN_MIN_PCT, 100] for safety.

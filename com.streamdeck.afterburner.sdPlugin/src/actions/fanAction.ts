@@ -54,6 +54,8 @@ export class FanAction extends SingletonAction<FanSettings> {
     const id = dial.id;
     const timer = setInterval(() => void this.#render(dial, id), REFRESH_MS);
     this.#dials.set(id, { settings, timer });
+    // Re-apply a persisted manual setting when the dial (re)appears.
+    if (settings.manual) setFanPercent(settings.targetPct);
     await this.#render(dial, id);
   }
 
@@ -61,6 +63,9 @@ export class FanAction extends SingletonAction<FanSettings> {
     const state = this.#dials.get(ev.action.id);
     if (state) {
       clearInterval(state.timer);
+      // Safety: hand control back to auto when the dial goes away; the manual
+      // value stays in settings and is re-applied when it reappears.
+      if (state.settings.manual) restoreAuto();
       this.#dials.delete(ev.action.id);
     }
   }
