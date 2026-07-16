@@ -22,6 +22,7 @@ Każdy klawisz może niezależnie monitorować inny parametr. Plugin działa jak
 - 🌈 **Wypełnienie pod wykresem** — gradient najmocniejszy tuż przy linii, zanikający w dół (kolorem wykresu)
 - 🔢 **Wiele klawiszy naraz** — ta sama akcja na kilku klawiszach, każdy z innym czujnikiem
 - 🎛️ **Sterowanie wiatrakami dialem (Stream Deck +)** — obrót ustawia % obrotów, naciśnięcie przełącza auto/manual; pasek pokazuje RPM na żywo. Obecnie **NVIDIA** (przez NVAPI); AMD w planach
+- 🌐 **Przepustowość sieci** — akcje „Network download" i „Network upload" pokazują aktualny transfer (KB/s / MB/s), tekst lub wykres; wybór interfejsu w konfiguracji (niezależne od Afterburnera, czytane z Windows)
 - 🛡️ **Odporność na braki** — gdy Afterburner nie działa lub czujnik zniknął, klawisz pokazuje `N/A` zamiast się wywalać
 
 ---

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Network settings</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        font-family: -apple-system, "Segoe UI", sans-serif;
+        font-size: 13px;
+        color: #d8d8d8;
+        background: transparent;
+        margin: 0;
+        padding: 8px 12px;
+      }
+      .row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      .row > label { flex: 0 0 92px; text-align: right; color: #9a9a9a; }
+      .row > .control { flex: 1; display: flex; align-items: center; gap: 8px; }
+      select, input[type="range"] { width: 100%; }
+      select, input { background: #2d2d2d; color: #eee; border: 1px solid #3d3d3d; border-radius: 4px; }
+      input[type="color"] { width: 40px; height: 26px; padding: 0; border: none; background: none; }
+      .modes { display: flex; gap: 14px; }
+      .modes label { color: #d8d8d8; display: flex; align-items: center; gap: 4px; }
+      #sizeValue { flex: 0 0 32px; text-align: right; color: #9a9a9a; }
+      .hint { color: #6a6a6a; font-size: 11px; margin: -4px 0 10px 104px; }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <label for="iface">Interface</label>
+      <div class="control"><select id="iface"></select></div>
+    </div>
+    <div class="hint" id="ifaceHint">Reading interfaces…</div>
+
+    <div class="row">
+      <label>Display</label>
+      <div class="control modes">
+        <label><input type="radio" name="mode" value="text" /> Text</label>
+        <label><input type="radio" name="mode" value="chart" /> Chart</label>
+      </div>
+    </div>
+
+    <div class="row">
+      <label for="label">Label</label>
+      <div class="control"><input type="text" id="label" placeholder="(optional, e.g. DL)" style="width: 100%" /></div>
+    </div>
+
+    <div class="row">
+      <label for="valuePosition">Value position</label>
+      <div class="control">
+        <select id="valuePosition">
+          <option value="top">Top</option>
+          <option value="center">Center</option>
+          <option value="bottom">Bottom</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <label for="textColor">Text color</label>
+      <div class="control"><input type="color" id="textColor" /></div>
+    </div>
+
+    <div class="row">
+      <label for="chartColor">Chart color</label>
+      <div class="control"><input type="color" id="chartColor" /></div>
+    </div>
+
+    <div class="row">
+      <label for="textSize">Text size</label>
+      <div class="control">
+        <input type="range" id="textSize" min="10" max="40" step="1" />
+        <span id="sizeValue"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <label for="chartAuto">Chart range</label>
+      <div class="control">
+        <label><input type="checkbox" id="chartAuto" /> Auto scale</label>
+      </div>
+    </div>
+    <div class="row" id="rangeRow">
+      <label>Min / Max</label>
+      <div class="control">
+        <input type="number" id="chartMin" step="1" style="width: 70px" />
+        <input type="number" id="chartMax" step="1" style="width: 70px" />
+      </div>
+    </div>
+    <div class="hint">Fixed Y-axis bounds in bytes/s (used when Auto scale is off).</div>
+
+    <script>
+      let ws = null;
+      let uuid = null;
+      let actionUUID = null;
+      let settings = {
+        iface: "all",
+        displayMode: "text",
+        textColor: "#ffffff",
+        chartColor: "#4aa3ff",
+        textSize: 22,
+        bgColor: "#000000",
+        label: "",
+        valuePosition: "center",
+        chartAuto: true,
+        chartMin: 0,
+        chartMax: 100,
+      };
+
+      const $iface = document.getElementById("iface");
+      const $ifaceHint = document.getElementById("ifaceHint");
+      const $textColor = document.getElementById("textColor");
+      const $chartColor = document.getElementById("chartColor");
+      const $textSize = document.getElementById("textSize");
+      const $sizeValue = document.getElementById("sizeValue");
+      const $label = document.getElementById("label");
+      const $valuePosition = document.getElementById("valuePosition");
+      const $chartAuto = document.getElementById("chartAuto");
+      const $chartMin = document.getElementById("chartMin");
+      const $chartMax = document.getElementById("chartMax");
+      const $rangeRow = document.getElementById("rangeRow");
+
+      window.connectElgatoStreamDeckSocket = function (port, inUUID, registerEvent, _info, inActionInfo) {
+        uuid = inUUID;
+        const actionInfo = JSON.parse(inActionInfo);
+        actionUUID = actionInfo.action;
+        settings = Object.assign(settings, actionInfo.payload.settings || {});
+
+        ws = new WebSocket("ws://127.0.0.1:" + port);
+        ws.onopen = function () {
+          ws.send(JSON.stringify({ event: registerEvent, uuid: uuid }));
+          hydrate();
+          sendToPlugin({ event: "getInterfaces" });
+        };
+        ws.onmessage = function (e) {
+          const msg = JSON.parse(e.data);
+          if (msg.event === "sendToPropertyInspector" && msg.payload && msg.payload.event === "interfaces") {
+            populateInterfaces(msg.payload.items || []);
+          }
+        };
+      };
+
+      function sendToPlugin(payload) {
+        if (!ws) return;
+        ws.send(JSON.stringify({ event: "sendToPlugin", context: uuid, action: actionUUID, payload: payload }));
+      }
+      function saveSettings() {
+        if (!ws) return;
+        ws.send(JSON.stringify({ event: "setSettings", context: uuid, payload: settings }));
+      }
+
+      function hydrate() {
+        setMode(settings.displayMode);
+        $textColor.value = settings.textColor;
+        $chartColor.value = settings.chartColor;
+        $textSize.value = settings.textSize;
+        $sizeValue.textContent = settings.textSize + "px";
+        $label.value = settings.label;
+        $valuePosition.value = settings.valuePosition;
+        $chartAuto.checked = settings.chartAuto;
+        $chartMin.value = settings.chartMin;
+        $chartMax.value = settings.chartMax;
+        updateRangeEnabled();
+      }
+
+      function updateRangeEnabled() {
+        const disabled = $chartAuto.checked;
+        $chartMin.disabled = disabled;
+        $chartMax.disabled = disabled;
+        $rangeRow.style.opacity = disabled ? "0.45" : "1";
+      }
+
+      function setMode(mode) {
+        document.querySelectorAll('input[name="mode"]').forEach(function (r) {
+          r.checked = r.value === mode;
+        });
+      }
+
+      function populateInterfaces(items) {
+        $iface.innerHTML = "";
+        const all = document.createElement("option");
+        all.value = "all";
+        all.textContent = "All (sum)";
+        $iface.appendChild(all);
+        items.forEach(function (it) {
+          const opt = document.createElement("option");
+          opt.value = it.id;
+          opt.textContent = it.name;
+          $iface.appendChild(opt);
+        });
+        $ifaceHint.textContent = items.length ? "" : "No interfaces found.";
+        $iface.value = settings.iface;
+        if (!$iface.value) {
+          settings.iface = "all";
+          $iface.value = "all";
+        }
+      }
+
+      $iface.addEventListener("change", function () {
+        settings.iface = $iface.value;
+        saveSettings();
+      });
+      document.querySelectorAll('input[name="mode"]').forEach(function (r) {
+        r.addEventListener("change", function () {
+          settings.displayMode = r.value;
+          saveSettings();
+        });
+      });
+      $textColor.addEventListener("input", function () {
+        settings.textColor = $textColor.value;
+        saveSettings();
+      });
+      $chartColor.addEventListener("input", function () {
+        settings.chartColor = $chartColor.value;
+        saveSettings();
+      });
+      $textSize.addEventListener("input", function () {
+        settings.textSize = parseInt($textSize.value, 10);
+        $sizeValue.textContent = settings.textSize + "px";
+        saveSettings();
+      });
+      $label.addEventListener("input", function () {
+        settings.label = $label.value;
+        saveSettings();
+      });
+      $valuePosition.addEventListener("change", function () {
+        settings.valuePosition = $valuePosition.value;
+        saveSettings();
+      });
+      $chartAuto.addEventListener("change", function () {
+        settings.chartAuto = $chartAuto.checked;
+        updateRangeEnabled();
+        saveSettings();
+      });
+      $chartMin.addEventListener("input", function () {
+        settings.chartMin = parseFloat($chartMin.value) || 0;
+        saveSettings();
+      });
+      $chartMax.addEventListener("input", function () {
+        settings.chartMax = parseFloat($chartMax.value) || 0;
+        saveSettings();
+      });
+    </script>
+  </body>
+</html>

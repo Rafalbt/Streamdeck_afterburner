@@ -23,6 +23,10 @@ export function formatValue(v: number, unit?: string): string {
   if (!Number.isFinite(v)) return "--";
   if (unit === "GB") return v.toFixed(1);
   if (unit === "GHz") return v.toFixed(2);
+  // Network rates: `v` is bytes/s, formatted into the given unit.
+  if (unit === "GB/s") return (v / 2 ** 30).toFixed(2);
+  if (unit === "MB/s") return (v / 2 ** 20).toFixed(1);
+  if (unit === "KB/s") return (v / 1024).toFixed(0);
   const abs = Math.abs(v);
   if (abs >= 1000) return Math.round(v).toString();
   if (abs >= 100) return v.toFixed(0);
