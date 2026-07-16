@@ -19,6 +19,8 @@ import { HISTORY_MAX } from "../settings.js";
 interface NetSettings extends JsonObject {
   /** Interface id (InterfaceIndex as string), or "all" to sum every adapter. */
   iface: string;
+  /** Display unit: "auto" picks by magnitude, otherwise a fixed byte prefix. */
+  unit: "auto" | "KB/s" | "MB/s" | "GB/s";
   displayMode: "text" | "chart";
   textColor: string;
   chartColor: string;
@@ -33,6 +35,7 @@ interface NetSettings extends JsonObject {
 
 const DEFAULTS: NetSettings = {
   iface: "all",
+  unit: "auto",
   displayMode: "text",
   textColor: "#ffffff",
   chartColor: "#4aa3ff",
@@ -136,7 +139,7 @@ abstract class NetActionBase extends SingletonAction<NetSettings> {
       }
       state.last = { rx: octets.rx, tx: octets.tx, time: now };
 
-      const unit = rateUnit(bytesPerSec);
+      const unit = settings.unit === "auto" ? rateUnit(bytesPerSec) : settings.unit;
       if (settings.displayMode === "chart") {
         state.history.push(bytesPerSec);
         if (state.history.length > HISTORY_MAX) state.history.shift();

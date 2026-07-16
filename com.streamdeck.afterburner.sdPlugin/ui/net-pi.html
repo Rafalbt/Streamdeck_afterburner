@@ -34,6 +34,18 @@
     <div class="hint" id="ifaceHint">Reading interfaces…</div>
 
     <div class="row">
+      <label for="unit">Unit</label>
+      <div class="control">
+        <select id="unit">
+          <option value="auto">Auto</option>
+          <option value="KB/s">KB/s</option>
+          <option value="MB/s">MB/s</option>
+          <option value="GB/s">GB/s</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
       <label>Display</label>
       <div class="control modes">
         <label><input type="radio" name="mode" value="text" /> Text</label>
@@ -96,6 +108,7 @@
       let actionUUID = null;
       let settings = {
         iface: "all",
+        unit: "auto",
         displayMode: "text",
         textColor: "#ffffff",
         chartColor: "#4aa3ff",
@@ -110,6 +123,7 @@
 
       const $iface = document.getElementById("iface");
       const $ifaceHint = document.getElementById("ifaceHint");
+      const $unit = document.getElementById("unit");
       const $textColor = document.getElementById("textColor");
       const $chartColor = document.getElementById("chartColor");
       const $textSize = document.getElementById("textSize");
@@ -152,6 +166,7 @@
 
       function hydrate() {
         setMode(settings.displayMode);
+        $unit.value = settings.unit;
         $textColor.value = settings.textColor;
         $chartColor.value = settings.chartColor;
         $textSize.value = settings.textSize;
@@ -199,6 +214,10 @@
 
       $iface.addEventListener("change", function () {
         settings.iface = $iface.value;
+        saveSettings();
+      });
+      $unit.addEventListener("change", function () {
+        settings.unit = $unit.value;
         saveSettings();
       });
       document.querySelectorAll('input[name="mode"]').forEach(function (r) {
